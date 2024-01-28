@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h> // for sleep
 
 enum Direction {
@@ -16,6 +17,37 @@ typedef struct {
 
 WINDOW* create_newwin(int height, int width, int starty, int startx);
 void destroy_win(WINDOW* local_win);
+Position* find_border_position(int width, int height, Position borderPosition, int borderSize);
+
+Position* find_border_position(int width, int height, Position borderPosition, int borderSize) {
+    Position* borderPositions = malloc(sizeof(Position) * borderSize);
+
+    // First loop: Top and Bottom borders
+    for (int i = 0; i < width; i++) {
+        borderPositions[i] = (Position){i, 0};
+        borderPositions[i + width] = (Position){i, height - 1};
+    }
+    // Second loop: Left and Right borders
+    for (int i = 0; i < height - 2; i++) {
+        borderPositions[2 * width + i] = (Position){0, 1 + i};
+        borderPositions[2 * width + height - 2 + i] = (Position){width - 1, 1 + i};
+    }
+
+    return borderPositions;
+}
+
+int arePositionsEqual(Position a, Position b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+int isPositionOnBorder(Position* borderPositions, int borderSize, Position pos) {
+    for (int i = 0; i < borderSize; i++) {
+        if (arePositionsEqual(borderPositions[i], pos)) {
+            return 1; // Position is on the border
+        }
+    }
+    return 0; // Position is not on the border
+}
 
 int main(int argc, char* argv[]) {
     initscr();             // Start curses mode
@@ -24,23 +56,29 @@ int main(int argc, char* argv[]) {
     nodelay(stdscr, TRUE); // Make getch non-blocking
     noecho();              // Don't echo keypresses
 
-    // Game loop
+    // GLOBAL
     int ch;
     int last_ch;
     int milisecondsToSleep = 300;
-    Position infoPosition = {1, 1};
+
+    // Game loop
+
+    // GAME
     Position snakePosition = {3, 3};
     enum Direction direction = RIGHT;
-
     int gameWindowHeight = 20;
     int gameWindowWidth = 60;
     Position gameWindowPosition = {3, 3};
+    int borderSize = (gameWindowWidth * 2 + gameWindowHeight * 2) - 4;
+    Position* borderPositions = find_border_position(gameWindowWidth, gameWindowHeight, gameWindowPosition, borderSize);
 
+    WINDOW* gameWindow = create_newwin(gameWindowHeight, gameWindowWidth, gameWindowPosition.y, gameWindowPosition.x);
+
+    // UI
+    Position infoPosition = {1, 1};
     int uiWindowHeight = 5;
     int uiWindowWidth = 60;
     Position uiWindowPosition = {3, 23};
-
-    WINDOW* gameWindow = create_newwin(gameWindowHeight, gameWindowWidth, gameWindowPosition.y, gameWindowPosition.x);
     WINDOW* uiWindow = create_newwin(uiWindowHeight, uiWindowWidth, uiWindowPosition.y, uiWindowPosition.x);
 
     while (1) {
@@ -88,19 +126,27 @@ int main(int argc, char* argv[]) {
 
         // Game rendering
         wclear(gameWindow);
-        mvwprintw(gameWindow, snakePosition.y, snakePosition.x, "snake");
+        mvwprintw(gameWindow, snakePosition.y, snakePosition.x, "O");
         box(gameWindow, 0, 0);
         wrefresh(gameWindow); // Update game window
 
         // UI rendering
         wclear(uiWindow);
-        mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
+        if (isPositionOnBorder(borderPositions, borderSize, snakePosition)) {
+            mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Don't cross the border!!!");
+
+        } else {
+            mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
+            mvwprintw(uiWindow, infoPosition.y+1, infoPosition.x, "Your position is x: %d, y: %d", snakePosition.x, snakePosition.y);
+        }
         box(uiWindow, 0, 0);
         wrefresh(uiWindow); // Update game window
 
         usleep(1000 * milisecondsToSleep); // Wait for 1 second
     }
 
+    free(borderPositions);
+    borderPositions = NULL;
     endwin(); // End curses mode
     return 0;
 }
