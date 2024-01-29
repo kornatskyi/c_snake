@@ -18,11 +18,13 @@ typedef struct {
 WINDOW* create_newwin(int height, int width, int starty, int startx);
 void destroy_win(WINDOW* local_win);
 Position* find_border_position(int width, int height, Position borderPosition, int borderSize);
+int isPositionOnBorder(Position* borderPositions, int borderSize, Position pos);
+int arePositionsEqual(Position a, Position b);
 
 Position* find_border_position(int width, int height, Position borderPosition, int borderSize) {
     Position* borderPositions = malloc(sizeof(Position) * borderSize);
 
-    // First loop: Top and Bottom borders
+    // First loop: Top  and Bottom borders
     for (int i = 0; i < width; i++) {
         borderPositions[i] = (Position){i, 0};
         borderPositions[i + width] = (Position){i, height - 1};
@@ -61,8 +63,6 @@ int main(int argc, char* argv[]) {
     int last_ch;
     int milisecondsToSleep = 300;
 
-    // Game loop
-
     // GAME
     Position snakePosition = {3, 3};
     enum Direction direction = RIGHT;
@@ -81,6 +81,7 @@ int main(int argc, char* argv[]) {
     Position uiWindowPosition = {3, 23};
     WINDOW* uiWindow = create_newwin(uiWindowHeight, uiWindowWidth, uiWindowPosition.y, uiWindowPosition.x);
 
+    // Game loop
     while (1) {
         // Read all available characters
         while ((ch = getch()) != ERR) {
@@ -137,7 +138,7 @@ int main(int argc, char* argv[]) {
 
         } else {
             mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
-            mvwprintw(uiWindow, infoPosition.y+1, infoPosition.x, "Your position is x: %d, y: %d", snakePosition.x, snakePosition.y);
+            mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakePosition.x, snakePosition.y);
         }
         box(uiWindow, 0, 0);
         wrefresh(uiWindow); // Update game window
