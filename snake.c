@@ -18,7 +18,7 @@ typedef struct {
 WINDOW* create_newwin(int height, int width, int starty, int startx);
 void destroy_win(WINDOW* local_win);
 Position* find_border_position(int width, int height, Position borderPosition, int borderSize);
-int isPositionOnBorder(Position* borderPositions, int borderSize, Position pos);
+int isColliding(Position* borderPositions, int borderSize, Position pos);
 int arePositionsEqual(Position a, Position b);
 
 Position* find_border_position(int width, int height, Position borderPosition, int borderSize) {
@@ -42,9 +42,9 @@ int arePositionsEqual(Position a, Position b) {
     return a.x == b.x && a.y == b.y;
 }
 
-int isPositionOnBorder(Position* borderPositions, int borderSize, Position pos) {
-    for (int i = 0; i < borderSize; i++) {
-        if (arePositionsEqual(borderPositions[i], pos)) {
+int isColliding(Position* collisionTargets, int numberOfTargets, Position snakePosition) {
+    for (int i = 0; i < numberOfTargets; i++) {
+        if (arePositionsEqual(collisionTargets[i], snakePosition)) {
             return 1; // Position is on the border
         }
     }
@@ -69,8 +69,8 @@ int main(int argc, char* argv[]) {
     int gameWindowHeight = 20;
     int gameWindowWidth = 60;
     Position gameWindowPosition = {3, 3};
-    int borderSize = (gameWindowWidth * 2 + gameWindowHeight * 2) - 4;
-    Position* borderPositions = find_border_position(gameWindowWidth, gameWindowHeight, gameWindowPosition, borderSize);
+    int borderLength = (gameWindowWidth * 2 + gameWindowHeight * 2) - 4;
+    Position* borderPositions = find_border_position(gameWindowWidth, gameWindowHeight, gameWindowPosition, borderLength);
 
     WINDOW* gameWindow = create_newwin(gameWindowHeight, gameWindowWidth, gameWindowPosition.y, gameWindowPosition.x);
 
@@ -80,6 +80,11 @@ int main(int argc, char* argv[]) {
     int uiWindowWidth = 60;
     Position uiWindowPosition = {3, 23};
     WINDOW* uiWindow = create_newwin(uiWindowHeight, uiWindowWidth, uiWindowPosition.y, uiWindowPosition.x);
+
+    Position foodPositions[1];
+
+    foodPositions[0].x = 6;
+    foodPositions[0].y = 9;
 
     // Game loop
     while (1) {
@@ -127,18 +132,21 @@ int main(int argc, char* argv[]) {
 
         // Game rendering
         wclear(gameWindow);
+        mvwprintw(gameWindow, foodPositions[0].y, foodPositions[0].x, "f");
         mvwprintw(gameWindow, snakePosition.y, snakePosition.x, "O");
         box(gameWindow, 0, 0);
         wrefresh(gameWindow); // Update game window
 
         // UI rendering
         wclear(uiWindow);
-        if (isPositionOnBorder(borderPositions, borderSize, snakePosition)) {
-            mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Don't cross the border!!!");
 
-        } else {
-            mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
-            mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakePosition.x, snakePosition.y);
+        mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
+        mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakePosition.x, snakePosition.y);
+        if (isColliding(borderPositions, borderLength, snakePosition)) {
+            mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Don't cross the border!!!");
+        }
+        if (isColliding(foodPositions, 1, snakePosition)) {
+            mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Colliding with food!!!");
         }
         box(uiWindow, 0, 0);
         wrefresh(uiWindow); // Update game window
