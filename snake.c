@@ -51,10 +51,27 @@ int isColliding(Position* collisionTargets, int numberOfTargets, Position snakeP
     return 0; // Position is not on the border
 }
 
-void updateSnakePosition(Position* snakeBody, int snakeLength, Position newHeadPosition) {
+void updateSnakePosition(Position* snakeBody, int snakeLength, enum Direction direction) {
     Position next = snakeBody[0];
+
+    switch (direction) {
+    case UP:
+        snakeBody[0].y -= 1;
+        break;
+    case DOWN:
+        snakeBody[0].y += 1;
+        break;
+    case LEFT:
+        snakeBody[0].x -= 1;
+        break;
+    case RIGHT:
+        snakeBody[0].x += 1;
+        break;
+    default:
+        break;
+    }
+
     Position temp;
-    snakeBody[0] = newHeadPosition;
     for (int i = 1; i < snakeLength; i++) {
         temp = snakeBody[i];
         snakeBody[i] = next;
@@ -63,6 +80,7 @@ void updateSnakePosition(Position* snakeBody, int snakeLength, Position newHeadP
 }
 
 void renderSnake(WINDOW* gameWindow, Position* snakeBody, int snakeLength) {
+
     for (int i = 0; i < snakeLength; i++) {
         mvwprintw(gameWindow, snakeBody[i].y, snakeBody[i].x, "s");
     }
@@ -81,7 +99,6 @@ int main(int argc, char* argv[]) {
     int milisecondsToSleep = 300;
 
     // GAME
-    Position snakePosition = {10, 10};
     enum Direction direction = RIGHT;
     int gameWindowHeight = 20;
     int gameWindowWidth = 60;
@@ -91,15 +108,16 @@ int main(int argc, char* argv[]) {
 
     WINDOW* gameWindow = create_newwin(gameWindowHeight, gameWindowWidth, gameWindowPosition.y, gameWindowPosition.x);
 
-    int snakeLength = 7;
+    int snakeLength = 8;
     Position snakeBody[10];
-    snakeBody[0] = snakePosition;
+    snakeBody[0] = (Position){10, 10};
     snakeBody[1] = (Position){9, 10};
     snakeBody[2] = (Position){8, 10};
     snakeBody[3] = (Position){7, 10};
     snakeBody[4] = (Position){6, 10};
     snakeBody[5] = (Position){6, 9};
     snakeBody[6] = (Position){6, 8};
+    snakeBody[7] = (Position){6, 7};
 
     // UI
     Position infoPosition = {1, 1};
@@ -110,8 +128,8 @@ int main(int argc, char* argv[]) {
 
     Position foodPositions[1];
 
-    foodPositions[0].x = 6;
-    foodPositions[0].y = 9;
+    foodPositions[0].x = 15;
+    foodPositions[0].y = 15;
 
     // Game loop
     while (1) {
@@ -147,27 +165,11 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
-        switch (direction) {
-        case UP:
-            snakePosition.y -= 1;
-            break;
-        case DOWN:
-            snakePosition.y += 1;
-            break;
-        case LEFT:
-            snakePosition.x -= 1;
-            break;
-        case RIGHT:
-            snakePosition.x += 1;
-            break;
 
-        default:
-            break;
-        }
+        updateSnakePosition(snakeBody, snakeLength, direction);
 
         // Game rendering
         wclear(gameWindow);
-        updateSnakePosition(snakeBody, snakeLength, (Position){snakePosition.x, snakePosition.y});
         renderSnake(gameWindow, snakeBody, snakeLength);
         mvwprintw(gameWindow, foodPositions[0].y, foodPositions[0].x, "f");
         box(gameWindow, 0, 0);
@@ -177,11 +179,11 @@ int main(int argc, char* argv[]) {
         wclear(uiWindow);
 
         mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
-        mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakePosition.x, snakePosition.y);
-        if (isColliding(borderPositions, borderLength, snakePosition)) {
+        mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakeBody[0].x, snakeBody[0].y);
+        if (isColliding(borderPositions, borderLength, snakeBody[0])) {
             mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Don't cross the border!!!");
         }
-        if (isColliding(foodPositions, 1, snakePosition)) {
+        if (isColliding(foodPositions, 1, snakeBody[0])) {
             mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Colliding with food!!!");
         }
         box(uiWindow, 0, 0);
