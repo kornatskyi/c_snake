@@ -124,16 +124,24 @@ int main(int argc, char* argv[]) {
             // Key was pressed
             switch (last_ch) {
             case KEY_UP:
-                direction = UP;
+                if (direction != DOWN) {
+                    direction = UP;
+                }
                 break;
             case KEY_DOWN:
-                direction = DOWN;
+                if (direction != UP) {
+                    direction = DOWN;
+                }
                 break;
             case KEY_LEFT:
-                direction = LEFT;
+                if (direction != RIGHT) {
+                    direction = LEFT;
+                }
                 break;
             case KEY_RIGHT:
-                direction = RIGHT;
+                if (direction != LEFT) {
+                    direction = RIGHT;
+                }
                 break;
             default:
                 break;
