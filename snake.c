@@ -51,6 +51,23 @@ int isColliding(Position* collisionTargets, int numberOfTargets, Position snakeP
     return 0; // Position is not on the border
 }
 
+void updateSnakePosition(Position* snakeBody, int snakeLength, Position newHeadPosition) {
+    Position next = snakeBody[0];
+    Position temp;
+    snakeBody[0] = newHeadPosition;
+    for (int i = 1; i < snakeLength; i++) {
+        temp = snakeBody[i];
+        snakeBody[i] = next;
+        next = temp;
+    }
+}
+
+void renderSnake(WINDOW* gameWindow, Position* snakeBody, int snakeLength) {
+    for (int i = 0; i < snakeLength; i++) {
+        mvwprintw(gameWindow, snakeBody[i].y, snakeBody[i].x, "s");
+    }
+}
+
 int main(int argc, char* argv[]) {
     initscr();             // Start curses mode
     cbreak();              // Line buffering disabled
@@ -64,7 +81,7 @@ int main(int argc, char* argv[]) {
     int milisecondsToSleep = 300;
 
     // GAME
-    Position snakePosition = {3, 3};
+    Position snakePosition = {10, 10};
     enum Direction direction = RIGHT;
     int gameWindowHeight = 20;
     int gameWindowWidth = 60;
@@ -73,6 +90,16 @@ int main(int argc, char* argv[]) {
     Position* borderPositions = find_border_position(gameWindowWidth, gameWindowHeight, gameWindowPosition, borderLength);
 
     WINDOW* gameWindow = create_newwin(gameWindowHeight, gameWindowWidth, gameWindowPosition.y, gameWindowPosition.x);
+
+    int snakeLength = 7;
+    Position snakeBody[10];
+    snakeBody[0] = snakePosition;
+    snakeBody[1] = (Position){9, 10};
+    snakeBody[2] = (Position){8, 10};
+    snakeBody[3] = (Position){7, 10};
+    snakeBody[4] = (Position){6, 10};
+    snakeBody[5] = (Position){6, 9};
+    snakeBody[6] = (Position){6, 8};
 
     // UI
     Position infoPosition = {1, 1};
@@ -132,8 +159,9 @@ int main(int argc, char* argv[]) {
 
         // Game rendering
         wclear(gameWindow);
+        updateSnakePosition(snakeBody, snakeLength, (Position){snakePosition.x, snakePosition.y});
+        renderSnake(gameWindow, snakeBody, snakeLength);
         mvwprintw(gameWindow, foodPositions[0].y, foodPositions[0].x, "f");
-        mvwprintw(gameWindow, snakePosition.y, snakePosition.x, "O");
         box(gameWindow, 0, 0);
         wrefresh(gameWindow); // Update game window
 
