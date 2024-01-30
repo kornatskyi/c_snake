@@ -52,8 +52,11 @@ int isColliding(Position* collisionTargets, int numberOfTargets, Position snakeP
 }
 
 void updateSnakePosition(Position* snakeBody, int snakeLength, enum Direction direction) {
-    Position next = snakeBody[0];
-
+    // Update body
+    for (int i = snakeLength - 1; i > 0; i--) {
+        snakeBody[i] = snakeBody[i - 1];
+    }
+    // Update head
     switch (direction) {
     case UP:
         snakeBody[0].y -= 1;
@@ -69,13 +72,6 @@ void updateSnakePosition(Position* snakeBody, int snakeLength, enum Direction di
         break;
     default:
         break;
-    }
-
-    Position temp;
-    for (int i = 1; i < snakeLength; i++) {
-        temp = snakeBody[i];
-        snakeBody[i] = next;
-        next = temp;
     }
 }
 
