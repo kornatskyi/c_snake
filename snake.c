@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     // Game
     enum Direction direction = RIGHT;
     int gameWindowHeight = 20;
-    int gameWindowWidth = 60;
+    int gameWindowWidth = 20;
     Position gameWindowPosition = {3, 3};
     int snakeLength = 1; // init snake length
     int maxSnakeLength = (gameWindowHeight - 1) * (gameWindowWidth - 1);
@@ -194,6 +194,38 @@ int main(int argc, char* argv[]) {
         mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakeBody[0].x, snakeBody[0].y);
 
         mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Food position is x: %d, y: %d", foodPositions[0].x, foodPositions[0].y);
+        if (isColliding(borderPositions, borderLength, snakeBody[0]) || (snakeLength > 1 && isColliding(&snakeBody[1], snakeLength - 1, snakeBody[0]))) {
+            wclear(uiWindow);
+            nodelay(stdscr, FALSE);
+            mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "You lost. Press 'q' to quit or 'r' to restart the game!");
+            wrefresh(uiWindow);
+
+            int ch = getch();
+            while (ch != 'q' && ch != 'Q' && ch != 'r' && ch != 'R') {
+                ch = getch();
+            }
+
+            if (ch == 'q' || ch == 'Q') {
+                break;
+            } else if (ch == 'r' || ch == 'R') {
+                // Reset the game sate
+                nodelay(stdscr, TRUE);
+                snakeBody[0] = (Position){10, 10};
+                snakeLength = 1;
+                foodPositions[0] = get_random_position(gameWindowWidth, gameWindowHeight);
+
+                // Refresh windows
+                wclear(gameWindow);
+                wclear(uiWindow);
+                box(gameWindow, 0, 0);
+                box(uiWindow, 0, 0);
+                wrefresh(gameWindow);
+                wrefresh(uiWindow);
+
+                continue;
+            }
+        }
+
         if (isColliding(borderPositions, borderLength, snakeBody[0])) {
             mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Don't cross the border!!!");
         }
@@ -206,7 +238,7 @@ int main(int argc, char* argv[]) {
         box(uiWindow, 0, 0);
         wrefresh(uiWindow); // Update game window
 
-        usleep(1000 * milisecondsToSleep); // Wait for 1 second
+        usleep(1000 * milisecondsToSleep);
     }
 
     free(borderPositions);
