@@ -79,7 +79,11 @@ void updateSnakePosition(Position* snakeBody, int snakeLength, enum Direction di
 void renderSnake(WINDOW* gameWindow, Position* snakeBody, int snakeLength) {
 
     for (int i = 0; i < snakeLength; i++) {
+        wattron(gameWindow, COLOR_PAIR(2));
+        if (i == 0) wattron(gameWindow, A_BOLD);
         mvwprintw(gameWindow, snakeBody[i].y, snakeBody[i].x, "o");
+        if (i == 0) wattroff(gameWindow, A_BOLD);
+        wattroff(gameWindow, COLOR_PAIR(2));
     }
 }
 
@@ -91,11 +95,19 @@ Position get_random_position(int gameWindowWidth, int gameWindowHeight) {
 
 int main(int argc, char* argv[]) {
     initscr();             // Start curses mode
+    start_color();         // Start color functionality
     cbreak();              // Line buffering disabled
     keypad(stdscr, TRUE);  // Enable function keys
     nodelay(stdscr, TRUE); // Make getch non-blocking
     noecho();              // Don't echo keypresses
 
+    // Define color pairs
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(4, COLOR_WHITE, COLOR_BLACK); // Define color pair
+
+    bkgd(COLOR_PAIR(1));
     srand(time(NULL)); // Initialization, should only be called once.
 
     // Global
@@ -106,7 +118,7 @@ int main(int argc, char* argv[]) {
     // Game
     enum Direction direction = RIGHT;
     int gameWindowHeight = 20;
-    int gameWindowWidth = 20;
+    int gameWindowWidth = 60;
     Position gameWindowPosition = {3, 3};
     int snakeLength = 1; // init snake length
     int maxSnakeLength = (gameWindowHeight - 1) * (gameWindowWidth - 1);
@@ -183,21 +195,33 @@ int main(int argc, char* argv[]) {
         // Game rendering
         wclear(gameWindow);
         renderSnake(gameWindow, snakeBody, snakeLength);
+        wattron(gameWindow, COLOR_PAIR(3));
         mvwprintw(gameWindow, foodPositions[0].y, foodPositions[0].x, "O");
+        wattroff(gameWindow, COLOR_PAIR(3));
+
         box(gameWindow, 0, 0);
         wrefresh(gameWindow); // Update game window
 
         // UI rendering
         wclear(uiWindow);
 
-        mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
-        mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakeBody[0].x, snakeBody[0].y);
+        // display information
+        mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Your score is: %d", snakeLength);
 
-        mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Food position is x: %d, y: %d", foodPositions[0].x, foodPositions[0].y);
+        // mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Last key pressed: %d", last_ch);
+        // mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "Your position is x: %d, y: %d", snakeBody[0].x, snakeBody[0].y);
+        // mvwprintw(uiWindow, infoPosition.y + 2, infoPosition.x, "Food position is x: %d, y: %d", foodPositions[0].x, foodPositions[0].y);
+
         if (isColliding(borderPositions, borderLength, snakeBody[0]) || (snakeLength > 1 && isColliding(&snakeBody[1], snakeLength - 1, snakeBody[0]))) {
             wclear(uiWindow);
+            box(uiWindow, 0, 0);
             nodelay(stdscr, FALSE);
-            mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "You lost. Press 'q' to quit or 'r' to restart the game!");
+            wattron(uiWindow, COLOR_PAIR(1));
+            mvwprintw(uiWindow, infoPosition.y, infoPosition.x, "Your score is: %d", snakeLength);
+            wattron(uiWindow, A_BOLD);
+            mvwprintw(uiWindow, infoPosition.y + 1, infoPosition.x, "You lost. Press 'q' to quit or 'r' to restart the game!");
+            wattroff(uiWindow, A_BOLD);
+            wattron(uiWindow, COLOR_PAIR(1));
             wrefresh(uiWindow);
 
             int ch = getch();
@@ -226,15 +250,15 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (isColliding(borderPositions, borderLength, snakeBody[0])) {
-            mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Don't cross the border!!!");
-        }
-        if (isColliding(foodPositions, 1, snakeBody[0])) {
-            mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Colliding with food!!!");
-        }
-        if (snakeLength > 1 && isColliding(&snakeBody[1], snakeLength - 1, snakeBody[0])) {
-            mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Colliding with itself");
-        }
+        // if (isColliding(borderPositions, borderLength, snakeBody[0])) {
+        //     mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Don't cross the border!!!");
+        // }
+        // if (isColliding(foodPositions, 1, snakeBody[0])) {
+        //     mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Colliding with food!!!");
+        // }
+        // if (snakeLength > 1 && isColliding(&snakeBody[1], snakeLength - 1, snakeBody[0])) {
+        //     mvwprintw(uiWindow, infoPosition.y + 3, infoPosition.x, "Colliding with itself");
+        // }
         box(uiWindow, 0, 0);
         wrefresh(uiWindow); // Update game window
 
